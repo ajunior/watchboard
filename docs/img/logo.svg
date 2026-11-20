@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <!-- WatchBoard mark: signal pulse on a primary rounded square -->
+  <rect width="256" height="256" rx="56" fill="#5B8DF6"/>
+  <g transform="translate(32 32) scale(8)" fill="none" stroke="#FFFFFF"
+     stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3 12h3l3-7 4 14 3-7h5"/>
+  </g>
+</svg>

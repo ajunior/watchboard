@@ -1,0 +1,37 @@
+# Build output (any build dir: build/, build-debug/, cmake-build-*/ …)
+build*/
+cmake-build-*/
+out/
+
+# CMake, when configured in-source by mistake
+CMakeCache.txt
+CMakeFiles/
+CMakeUserPresets.json
+cmake_install.cmake
+_deps/
+compile_commands.json
+
+# Qt Creator
+*.user
+*.user.*
+*.autosave
+.qtc_clangd/
+.qmlls.ini
+
+# Other editors / IDEs
+.vscode/
+.idea/
+.cache/
+*.swp
+*~
+
+# Arduino CLI / PlatformIO builds of the firmware
+firmware/**/build/
+.pio/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Loose screenshots dropped in the repo root (the README one lives in assets/)
+/Screenshot*.png

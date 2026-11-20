@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WatchBoard</title>
+<meta name="description" content="A desktop dashboard for Arduino, ESP32 and friends: see pins, variables and serial traffic from your microcontroller in real time.">
+<meta property="og:title" content="WatchBoard">
+<meta property="og:description" content="See what your microcontroller is doing in real time: pins, variables, and serial.">
+<meta property="og:image" content="img/tab2-light.webp">
+<link rel="icon" href="img/logo.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Palette = Mahina's theme tokens, the same ones the app is drawn with. */
+:root {
+  --primary: #5B8DF6; --primary-hover: #4878E8; --on-primary: #fff;
+  --bg: #EDEEF6; --panel: #F4F4FA; --surface: #FFFFFF; --border: #E2E5F0;
+  --fg: #1E2030; --fg2: #697180; --success: #59A14F; --warning: #F28E2B; --error: #E15759;
+  --code-bg: #F4F4FA; --primary-subtle: #EEF3FD;
+  --shadow: 0 1px 2px rgba(30,32,48,.06), 0 12px 40px rgba(30,32,48,.10);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #151922; --panel: #171D27; --surface: #1E2430; --border: #313B4C;
+    --fg: #F4F7FB; --fg2: #AAB4C4; --code-bg: #171D27; --primary-subtle: #1F2B45;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 40px rgba(0,0,0,.35);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #151922; --panel: #171D27; --surface: #1E2430; --border: #313B4C;
+  --fg: #F4F7FB; --fg2: #AAB4C4; --code-bg: #171D27; --primary-subtle: #1F2B45;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 40px rgba(0,0,0,.35);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 76px; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font: 16px/1.65 Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--primary); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code, pre, kbd { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; }
+code { font-size: .87em; background: var(--code-bg); border: 1px solid var(--border); border-radius: 5px; padding: .08em .35em; }
+pre { position: relative; margin: 1rem 0 1.4rem; background: var(--code-bg); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.1rem; overflow-x: auto; font-size: .84rem; line-height: 1.6; }
+pre code { background: none; border: 0; padding: 0; font-size: inherit; }
+kbd { font-size: .8em; background: var(--surface); border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 5px; padding: .1em .4em; white-space: nowrap; }
+img { max-width: 100%; display: block; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 16px; }
+@media (min-width: 720px) { .wrap { padding: 0 28px; } }
+
+/* ── Top bar ───────────────────────────────────────── */
+.top { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 85%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); }
+.top .wrap { display: flex; align-items: center; gap: 1rem; height: 60px; }
+.brand { display: flex; align-items: center; gap: .6rem; font-weight: 600; color: var(--fg); letter-spacing: -.01em; }
+.brand:hover { text-decoration: none; }
+.brand img { width: 28px; height: 28px; }
+.top nav { margin-left: auto; display: flex; align-items: center; gap: .25rem; }
+.top nav a { color: var(--fg2); font-size: .92rem; font-weight: 500; padding: .35rem .6rem; border-radius: 7px; }
+.top nav a:hover { color: var(--fg); background: var(--panel); text-decoration: none; }
+.icon-btn { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--fg2); cursor: pointer; }
+.icon-btn:hover { color: var(--fg); }
+.icon-btn svg { width: 17px; height: 17px; }
+@media (max-width: 560px) { .top nav a.opt { display: none; } }
+
+/* ── Hero ──────────────────────────────────────────── */
+.hero { padding: 72px 0 40px; text-align: center; }
+.hero h1 { font-size: clamp(2rem, 5.2vw, 3.4rem); line-height: 1.1; letter-spacing: -.035em; margin: 0 auto .9rem; max-width: 16ch; font-weight: 700; }
+.hero h1 span { color: var(--primary); }
+.hero p.lead { font-size: clamp(1.05rem, 2vw, 1.2rem); color: var(--fg2); max-width: 40rem; margin: 0 auto 1.8rem; }
+.ctas { display: flex; gap: .75rem; justify-content: center; flex-wrap: wrap; }
+.btn { display: inline-flex; align-items: center; gap: .5rem; font-weight: 600; font-size: .98rem; padding: .72rem 1.2rem; border-radius: 10px; border: 1px solid transparent; }
+.btn:hover { text-decoration: none; }
+.btn svg { width: 18px; height: 18px; }
+.btn-primary { background: var(--primary); color: var(--on-primary); }
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-ghost { background: var(--surface); color: var(--fg); border-color: var(--border); }
+.btn-ghost:hover { border-color: var(--fg2); }
+.meta { margin-top: 1rem; color: var(--fg2); font-size: .85rem; }
+.shot { margin: 48px auto 0; border-radius: 14px; overflow: hidden; border: 1px solid var(--border); box-shadow: var(--shadow); background: var(--surface); }
+.shot img { width: 100%; height: auto; aspect-ratio: 1100 / 720; }
+
+/* ── Features ──────────────────────────────────────── */
+section { padding: 56px 0; }
+.eyebrow { color: var(--primary); font-weight: 600; font-size: .82rem; text-transform: uppercase; letter-spacing: .08em; margin: 0 0 .4rem; }
+h2 { font-size: clamp(1.6rem, 3.4vw, 2.1rem); letter-spacing: -.025em; line-height: 1.2; margin: 0 0 .7rem; }
+.sub { color: var(--fg2); max-width: 44rem; margin: 0 0 2rem; }
+.grid3 { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem 1.3rem; }
+.card h3 { margin: .7rem 0 .3rem; font-size: 1.02rem; }
+.card p { margin: 0; color: var(--fg2); font-size: .94rem; }
+.card .ic { width: 38px; height: 38px; border-radius: 9px; display: grid; place-items: center; background: var(--primary-subtle); color: var(--primary); }
+.card .ic svg { width: 20px; height: 20px; }
+
+.tour { display: grid; gap: 1.5rem; grid-template-columns: minmax(0, 1fr); margin-top: 2.5rem; align-items: start; }
+@media (min-width: 900px) { .tour { grid-template-columns: 300px 1fr; } }
+.tour-tabs { display: grid; gap: .5rem; }
+.tour-tab { text-align: left; font: inherit; color: inherit; cursor: pointer; background: transparent; border: 1px solid transparent; border-radius: 10px; padding: .85rem 1rem; }
+.tour-tab:hover { background: var(--surface); }
+.tour-tab[aria-selected="true"] { background: var(--surface); border-color: var(--border); box-shadow: inset 3px 0 0 var(--primary); }
+.tour-tab b { display: block; font-size: 1rem; }
+.tour-tab span { display: block; color: var(--fg2); font-size: .9rem; line-height: 1.5; margin-top: .15rem; }
+@media (max-width: 899px) { .tour-tabs { grid-template-columns: repeat(2, 1fr); } .tour-tab span { display: none; } }
+.tour .shot { margin: 0; }
+
+/* ── Docs ──────────────────────────────────────────── */
+.docs { border-top: 1px solid var(--border); background: var(--panel); }
+.docs-grid { display: grid; gap: 2.5rem; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 960px) { .docs-grid { grid-template-columns: 210px minmax(0, 1fr); } }
+.toc { display: none; }
+@media (min-width: 960px) {
+  .toc { display: block; position: sticky; top: 84px; align-self: start; font-size: .9rem; }
+  .toc a { display: block; color: var(--fg2); padding: .3rem .75rem; border-left: 2px solid var(--border); }
+  .toc a:hover { color: var(--fg); text-decoration: none; }
+  .toc a.on { color: var(--primary); border-left-color: var(--primary); font-weight: 500; }
+  .toc p { margin: 0 0 .6rem; font-weight: 600; font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--fg2); }
+}
+.doc { max-width: 780px; min-width: 0; }
+.doc h3 { font-size: 1.4rem; letter-spacing: -.015em; margin: 3rem 0 .6rem; padding-top: .3rem; }
+.doc h3:first-of-type { margin-top: 1rem; }
+.doc h4 { font-size: 1.04rem; margin: 1.8rem 0 .4rem; }
+.doc p, .doc li { color: var(--fg); }
+.doc ul, .doc ol { padding-left: 1.3rem; }
+.doc li { margin: .3rem 0; }
+.doc .muted { color: var(--fg2); }
+.table-wrap { overflow-x: auto; margin: 1rem 0 1.4rem; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+th, td { text-align: left; padding: .6rem .85rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; color: var(--fg2); font-weight: 600; background: var(--panel); }
+tr:last-child td { border-bottom: 0; }
+td code { white-space: nowrap; }
+.note { border: 1px solid var(--border); border-left: 3px solid var(--primary); background: var(--surface); border-radius: 8px; padding: .8rem 1rem; margin: 1.2rem 0; font-size: .94rem; }
+.note.warn { border-left-color: var(--warning); }
+.note b:first-child { display: block; margin-bottom: .15rem; }
+.steps { counter-reset: s; list-style: none; padding: 0 !important; }
+.steps > li { counter-increment: s; position: relative; padding-left: 2.6rem; margin: 1.1rem 0; }
+.steps > li::before { content: counter(s); position: absolute; left: 0; top: .05rem; width: 1.75rem; height: 1.75rem; border-radius: 50%; background: var(--primary); color: #fff; font-size: .85rem; font-weight: 600; display: grid; place-items: center; }
+.copy { position: absolute; top: .5rem; right: .5rem; font: 500 .75rem Inter, system-ui, sans-serif; color: var(--fg2); background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: .2rem .5rem; cursor: pointer; opacity: 0; transition: opacity .15s; }
+pre:hover .copy, .copy:focus { opacity: 1; }
+@media (hover: none) { .copy { opacity: 1; } }
+.tok-c { color: var(--fg2); }
+.tok-k { color: #B07CD8; }
+.tok-s { color: var(--success); }
+.tok-n { color: var(--warning); }
+
+footer { border-top: 1px solid var(--border); padding: 28px 0 40px; color: var(--fg2); font-size: .88rem; }
+footer .wrap { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: space-between; }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#"><img src="img/logo.svg" alt="">WatchBoard</a>
+    <nav>
+      <a class="opt" href="#features">Features</a>
+      <a href="#docs">Docs</a>
+      <a class="opt" href="https://github.com/ajunior/watchboard">GitHub</a>
+      <button class="icon-btn" id="theme" type="button" aria-label="Toggle dark theme">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+<!-- ═══════════════════════════ Hero ═══════════════════════════ -->
+<div class="hero">
+  <div class="wrap">
+    <h1>See what your microcontroller is doing, <span>in real time</span></h1>
+    <p class="lead">WatchBoard is a desktop dashboard for Arduino, ESP32 and friends. Add a small library to your sketch, plug the board in over USB, and watch its pins, variables and serial traffic live, without a single <code>Serial.print</code>.</p>
+    <div class="ctas">
+      <a class="btn btn-primary" href="https://github.com/ajunior/watchboard/releases/latest">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16"/></svg>
+        Download
+      </a>
+      <a class="btn btn-ghost" href="#quick-start">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5V5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM8 7h7"/></svg>
+        Get started
+      </a>
+    </div>
+    <p class="meta">Free and open source · GPL-3.0 · <a href="https://github.com/ajunior/watchboard">Source on GitHub</a></p>
+    <div class="shot">
+      <picture>
+        <source srcset="img/tab2-dark.webp" media="(prefers-color-scheme: dark)" data-dark>
+        <img src="img/tab2-light.webp" width="1100" height="720" alt="WatchBoard's Pins tab: digital pins showing HIGH and LOW, and analog pins with live sparklines">
+      </picture>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ Features ═══════════════════════════ -->
+<section id="features">
+  <div class="wrap">
+    <p class="eyebrow">Why WatchBoard</p>
+    <h2>Between the Serial Monitor and a full dashboard stack</h2>
+    <p class="sub">The Serial Monitor shows you raw text; dashboard tools want a server, flows and a browser tab. WatchBoard is a native app that opens in a second and shows the board as it is right now.</p>
+
+    <div class="grid3">
+      <div class="card">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l3-7 4 14 3-7h5"/></svg></div>
+        <h3>Live, not logged</h3>
+        <p>The board sends a full snapshot ten times a second. Pins, values and plots update as it happens.</p>
+      </div>
+      <div class="card">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 9-4 3 4 3m8-6 4 3-4 3m-2-9-4 14"/></svg></div>
+        <h3>Five lines of firmware</h3>
+        <p>Register pins, name the values you care about, call <code>update()</code> in <code>loop()</code>. Non-blocking, no dependencies.</p>
+      </div>
+      <div class="card">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v6m0 8v6M4.9 4.9l4.2 4.2m5.8 5.8 4.2 4.2M2 12h6m8 0h6"/></svg></div>
+        <h3>Talk back to the board</h3>
+        <p>Flip an output pin with a switch, or type a line and send it, with history, from the Serial tab.</p>
+      </div>
+    </div>
+
+    <div class="tour" role="tablist" aria-label="App tour">
+      <div class="tour-tabs">
+        <button class="tour-tab" role="tab" aria-selected="true" data-shot="tab1"><b>Home</b><span>Board name, port, CPU speed, free RAM, flash, uptime and message rate, plus your pin labels.</span></button>
+        <button class="tour-tab" role="tab" aria-selected="false" data-shot="tab2"><b>Pins</b><span>Digital pins as HIGH/LOW, analog pins with a value bar and a 60-sample sparkline. Toggle outputs, rename and filter pins.</span></button>
+        <button class="tour-tab" role="tab" aria-selected="false" data-shot="tab3"><b>Variables</b><span>Every watched value in a table, plotted over the last 30 seconds. Hide a line and the axis rescales to what's left.</span></button>
+        <button class="tour-tab" role="tab" aria-selected="false" data-shot="tab4"><b>Serial</b><span>The raw traffic in both directions, with timestamps. Send lines to the board and save the session to a file.</span></button>
+      </div>
+      <div class="shot" id="tour-shot">
+        <picture>
+          <source srcset="img/tab1-dark.webp" media="(prefers-color-scheme: dark)" data-dark>
+          <img src="img/tab1-light.webp" width="1100" height="720" alt="WatchBoard's Home tab">
+        </picture>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════ Docs ═══════════════════════════ -->
+<section class="docs" id="docs">
+  <div class="wrap docs-grid">
+    <nav class="toc" aria-label="Documentation">
+      <p>Documentation</p>
+      <a href="#quick-start">Quick start</a>
+      <a href="#install">Install the app</a>
+      <a href="#library">The Arduino library</a>
+      <a href="#connect">Connecting</a>
+      <a href="#using">Using the app</a>
+      <a href="#profiles">Pin labels &amp; profiles</a>
+      <a href="#shortcuts">Keyboard shortcuts</a>
+      <a href="#protocol">Serial protocol</a>
+      <a href="#troubleshooting">Troubleshooting</a>
+    </nav>
+
+    <div class="doc">
+      <p class="eyebrow">Documentation</p>
+      <h2>Using WatchBoard</h2>
+      <p class="muted">Everything there is to know fits on this page. Start with the quick start; the rest is reference.</p>
+
+      <!-- Quick start -->
+      <h3 id="quick-start">Quick start</h3>
+      <ol class="steps">
+        <li><b>Install the app.</b> Grab the build for your system from the <a href="https://github.com/ajunior/watchboard/releases/latest">releases page</a>, or <a href="#build">build it from source</a>.</li>
+        <li><b>Add the library to your sketch.</b> Copy the <code>firmware/WatchBoard</code> folder from the repository into your Arduino <code>libraries</code> folder, then:
+<pre><code><span class="tok-k">#include</span> <span class="tok-s">&lt;WatchBoard.h&gt;</span>
+
+<span class="tok-k">void</span> setup() {
+    pinMode(<span class="tok-n">2</span>, INPUT);
+    WatchBoard.watchDigital(<span class="tok-n">2</span>);
+    WatchBoard.watchAnalog(A0);
+    WatchBoard.begin(Serial);        <span class="tok-c">// 115200 baud</span>
+}
+
+<span class="tok-k">void</span> loop() {
+    WatchBoard.watch(<span class="tok-s">"voltage"</span>, analogRead(A0) * (<span class="tok-n">5.0f</span> / <span class="tok-n">1023.0f</span>));
+    WatchBoard.update();             <span class="tok-c">// non-blocking: call it every loop</span>
+}</code></pre>
+        </li>
+        <li><b>Upload it, then connect.</b> Close the Arduino Serial Monitor (only one program can hold the port), open WatchBoard, pick the board's port and click <b>Connect</b>. The pins show up right away.</li>
+      </ol>
+
+      <!-- Install -->
+      <h3 id="install">Install the app</h3>
+      <p>Ready-made builds are published on the <a href="https://github.com/ajunior/watchboard/releases/latest">releases page</a>. If there isn't one for your system, building it takes a couple of commands.</p>
+      <h4 id="build">Build from source</h4>
+      <p>You need <b>Qt 6.8 or newer</b> (with the Qt Quick, Quick Controls 2 and Serial Port modules), <b>CMake 3.16+</b> and a <b>C++17</b> compiler. The UI library, <a href="https://ajunior.github.io/mahina/">Mahina</a>, is downloaded by CMake while configuring, so the first configure needs an internet connection.</p>
+<pre><code>git clone https://github.com/ajunior/watchboard.git
+cd watchboard
+cmake -B build -DCMAKE_PREFIX_PATH=/path/to/Qt/6.x/gcc_64   <span class="tok-c"># omit if Qt is installed system-wide</span>
+cmake --build build
+./build/watchboard</code></pre>
+
+      <!-- Library -->
+      <h3 id="library">The Arduino library</h3>
+      <p>The library lives in <code>firmware/WatchBoard</code>. Install it by copying that folder into your Arduino <code>libraries</code> folder (<code>~/Arduino/libraries</code> on Linux and macOS, <code>Documents\Arduino\libraries</code> on Windows), or zip it and use <b>Sketch → Include Library → Add .ZIP Library…</b>. It ships with an example, <b>File → Examples → WatchBoard → BasicMonitor</b>.</p>
+
+      <h4>API</h4>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Call</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>WatchBoard.begin(Serial)</code><br><code>WatchBoard.begin(Serial, baud)</code></td><td>Opens the serial port (115200 baud by default) and introduces the board to the app. Call it at the end of <code>setup()</code>, after registering pins.</td></tr>
+          <tr><td><code>WatchBoard.watchDigital(pin)</code></td><td>Shows a digital pin. Set its <code>pinMode</code> yourself; outputs can be toggled from the app.</td></tr>
+          <tr><td><code>WatchBoard.watchAnalog(pin)</code></td><td>Shows an analog input such as <code>A0</code>, with a bar and a sparkline. It's labelled with the board's own A name, so on an ESP32 GPIO36 appears as <code>A0</code>.</td></tr>
+          <tr><td><code>WatchBoard.watch("name", value)</code></td><td>Publishes a named number. Call it whenever the value changes, or every loop; the latest value is what gets sent. Sent rounded to two decimal places; NaN and infinity are sent as <code>null</code>.</td></tr>
+          <tr><td><code>WatchBoard.update()</code></td><td>Sends a snapshot every 100 ms and handles commands from the app. Never blocks, so it's safe to call on every <code>loop()</code>; don't put long <code>delay()</code>s around it.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h4>Limits</h4>
+      <p>To stay small on an Uno, the library uses fixed-size tables. Registrations past a limit are ignored. You can raise them with a <code>#define</code> in <code>WatchBoard.h</code>, at the cost of RAM.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Setting</th><th>Default</th></tr></thead>
+        <tbody>
+          <tr><td><code>WATCHBOARD_MAX_DIGITAL_PINS</code></td><td>20</td></tr>
+          <tr><td><code>WATCHBOARD_MAX_ANALOG_PINS</code></td><td>8</td></tr>
+          <tr><td><code>WATCHBOARD_MAX_WATCH_VARS</code></td><td>16</td></tr>
+          <tr><td><code>WATCHBOARD_INTERVAL_MS</code></td><td>100 (snapshot interval)</td></tr>
+        </tbody>
+      </table></div>
+      <div class="note warn"><b>Sharing the serial port</b>WatchBoard reads the port as a stream of JSON lines. Your own <code>Serial.print</code> output still reaches the Serial tab, but it isn't parsed, so keep it to a minimum and prefer <code>watch()</code> for values.</div>
+
+      <!-- Connect -->
+      <h3 id="connect">Connecting</h3>
+      <p>The bar at the top of the window lists the serial ports it finds. Pick one and click <b>Connect</b>; if you plugged the board in after opening the app, press the refresh button next to the list. The status bar at the bottom shows the connection state, the port and how many messages a second are arriving.</p>
+      <p>The port field is also a text box, so you can type any path, such as <code>/dev/ttyUSB0</code>, <code>COM3</code> or a virtual port like <code>/dev/pts/3</code>. To connect on startup, pass the port on the command line:</p>
+<pre><code>watchboard --port /dev/ttyACM0</code></pre>
+      <div class="note"><b>Baud rate</b>The app always opens the port at <b>115200 baud</b>, so keep the library's default and call <code>WatchBoard.begin(Serial)</code> without a baud argument.</div>
+
+      <!-- Using -->
+      <h3 id="using">Using the app</h3>
+      <p>The sidebar has four tabs, also reachable with <kbd>Ctrl</kbd>+<kbd>1</kbd> to <kbd>Ctrl</kbd>+<kbd>4</kbd>. The app remembers the last tab and your theme.</p>
+
+      <h4>Home</h4>
+      <p>An overview of the connected board: its name, the message rate, uptime, free RAM and flash use (where the board reports them), CPU speed, the reason for the last reset, and a count of pins by kind. The <b>Labels</b> card lists the pins you've renamed, and <b>Load Profile</b> loads a saved set of labels (see <a href="#profiles">profiles</a>).</p>
+
+      <h4>Pins</h4>
+      <ul>
+        <li><b>Digital pins</b> show <b>HIGH</b> or <b>LOW</b> and their mode. An <b>OUTPUT</b> pin has a switch: click it to drive the pin HIGH or LOW on the board.</li>
+        <li><b>Analog pins</b> show the reading against the board's full scale (1023 on a 10-bit ADC, 4095 on a 12-bit one), as a bar and a sparkline of the last 60 readings, about 6 seconds.</li>
+        <li><b>Double-click a pin's name</b> to give it a label, like <code>SOIL_SENSOR</code> for <code>A0</code>. Clear the text to remove it.</li>
+        <li><b>Filter pins…</b> narrows the grid by pin ID or label.</li>
+      </ul>
+
+      <h4>Variables</h4>
+      <p>Every value you <code>watch()</code> is listed with its latest reading, and plotted over the last 30 seconds. Each variable has its own colour; click its dot to hide or show its line, and the Y axis rescales to fit what's still visible, so a small signal doesn't get flattened by a big one. Values that aren't numbers (possible when you <a href="#protocol">write your own firmware</a>) are listed but not plotted.</p>
+
+      <h4>Serial</h4>
+      <p>Every line sent and received on the port, timestamped, with arrows for direction. Use the box at the bottom to send a line to the board: <kbd>Enter</kbd> sends it, <kbd>↑</kbd> and <kbd>↓</kbd> step through what you sent before. <b>Save</b> writes the session to a <code>.log</code> or <code>.txt</code> file; <b>Clear</b> empties the view.</p>
+
+      <!-- Profiles -->
+      <h3 id="profiles">Pin labels &amp; profiles</h3>
+      <p>Labels are kept in a <b>profile</b>, a small JSON file you can save next to your sketch and commit with it. On the Home tab, <b>Load Profile</b> opens one; once a profile is loaded, the buttons let you save changes to it or <b>Save As…</b> a new file.</p>
+<pre><code>{
+    <span class="tok-s">"board"</span>: <span class="tok-s">"Greenhouse controller"</span>,
+    <span class="tok-s">"labels"</span>: {
+        <span class="tok-s">"A0"</span>: <span class="tok-s">"SOIL_SENSOR"</span>,
+        <span class="tok-s">"7"</span>:  <span class="tok-s">"PUMP_RELAY"</span>
+    }
+}</code></pre>
+      <p class="muted">Keys are pin IDs as the board reports them: digital pins by number, analog pins as <code>A0</code>, <code>A1</code>, and so on.</p>
+
+      <!-- Shortcuts -->
+      <h3 id="shortcuts">Keyboard shortcuts</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Keys</th><th>Action</th></tr></thead>
+        <tbody>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>1</kbd> … <kbd>Ctrl</kbd>+<kbd>4</kbd></td><td>Home, Pins, Variables, Serial</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>D</kbd></td><td>Switch between light and dark theme</td></tr>
+          <tr><td><kbd>F1</kbd></td><td>About WatchBoard (also: click the version in the status bar)</td></tr>
+          <tr><td><kbd>Esc</kbd></td><td>Close the About dialog</td></tr>
+        </tbody>
+      </table></div>
+
+      <!-- Protocol -->
+      <h3 id="protocol">Serial protocol</h3>
+      <p>The library is a convenience: the app speaks a plain protocol of <b>one JSON object per line</b> at 115200 baud, so any device or language that can write to a serial port can talk to it, such as MicroPython, a Raspberry Pi Pico SDK program, or a Python script on a virtual port.</p>
+
+      <h4><code>hello</code>: device → app, once at startup</h4>
+<pre><code>{<span class="tok-s">"type"</span>:<span class="tok-s">"hello"</span>,<span class="tok-s">"board"</span>:<span class="tok-s">"ESP32"</span>,<span class="tok-s">"analogBits"</span>:<span class="tok-n">12</span>,<span class="tok-s">"analogMax"</span>:<span class="tok-n">4095</span>,<span class="tok-s">"cpuMhz"</span>:<span class="tok-n">240</span>,<span class="tok-s">"cores"</span>:<span class="tok-n">2</span>,
+ <span class="tok-s">"flashSize"</span>:<span class="tok-n">4194304</span>,<span class="tok-s">"sketchSize"</span>:<span class="tok-n">281024</span>,<span class="tok-s">"resetReason"</span>:<span class="tok-s">"Power on"</span>}</code></pre>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Field</th><th>Type</th><th>Meaning (default if missing)</th></tr></thead>
+        <tbody>
+          <tr><td><code>board</code></td><td>string</td><td>Name shown in the app (<code>"Unknown"</code>)</td></tr>
+          <tr><td><code>analogMax</code></td><td>int</td><td>Full-scale analog reading (1023)</td></tr>
+          <tr><td><code>analogBits</code></td><td>int</td><td>ADC resolution (10)</td></tr>
+          <tr><td><code>cpuMhz</code>, <code>cores</code></td><td>int</td><td>CPU clock and core count (0, 1)</td></tr>
+          <tr><td><code>flashSize</code>, <code>sketchSize</code></td><td>int</td><td>Flash size and sketch size in bytes; shown on Home as sketch / flash (0, shown as “—”)</td></tr>
+          <tr><td><code>resetReason</code></td><td>string</td><td>Why the board last reset (empty)</td></tr>
+          <tr><td><code>simulated</code></td><td>bool</td><td>For simulators: shows a SIM badge and hides the output switches (false)</td></tr>
+        </tbody>
+      </table></div>
+
+      <h4><code>state</code>: device → app, about every 100 ms</h4>
+<pre><code>{<span class="tok-s">"type"</span>:<span class="tok-s">"state"</span>,<span class="tok-s">"uptime"</span>:<span class="tok-n">12345</span>,<span class="tok-s">"freeRam"</span>:<span class="tok-n">1800</span>,<span class="tok-s">"minFreeRam"</span>:<span class="tok-n">1650</span>,
+ <span class="tok-s">"pins"</span>:[{<span class="tok-s">"id"</span>:<span class="tok-n">2</span>,<span class="tok-s">"mode"</span>:<span class="tok-s">"INPUT"</span>,<span class="tok-s">"value"</span>:<span class="tok-n">1</span>},
+         {<span class="tok-s">"id"</span>:<span class="tok-n">13</span>,<span class="tok-s">"mode"</span>:<span class="tok-s">"OUTPUT"</span>,<span class="tok-s">"value"</span>:<span class="tok-n">0</span>},
+         {<span class="tok-s">"id"</span>:<span class="tok-s">"A0"</span>,<span class="tok-s">"mode"</span>:<span class="tok-s">"INPUT_ANALOG"</span>,<span class="tok-s">"value"</span>:<span class="tok-n">512</span>}],
+ <span class="tok-s">"watch"</span>:{<span class="tok-s">"voltage"</span>:<span class="tok-n">2.5</span>,<span class="tok-s">"mode"</span>:<span class="tok-s">"PID"</span>}}</code></pre>
+      <ul>
+        <li><code>uptime</code> is in milliseconds; <code>freeRam</code> and <code>minFreeRam</code> in bytes (0 when unknown).</li>
+        <li>Each pin has an <code>id</code> (number or string), a <code>mode</code> (<code>INPUT</code>, <code>OUTPUT</code> or <code>INPUT_ANALOG</code>) and an integer <code>value</code>. Send the full list every time.</li>
+        <li><code>watch</code> is optional. Numbers are plotted; strings are shown as-is.</li>
+      </ul>
+
+      <h4><code>set</code>: app → device, when the user flips an output</h4>
+<pre><code>{<span class="tok-s">"cmd"</span>:<span class="tok-s">"set"</span>,<span class="tok-s">"pin"</span>:<span class="tok-s">"13"</span>,<span class="tok-s">"value"</span>:<span class="tok-n">1</span>}</code></pre>
+      <p class="muted">Lines typed in the Serial tab are sent as they are, followed by a newline.</p>
+
+      <!-- Troubleshooting -->
+      <h3 id="troubleshooting">Troubleshooting</h3>
+      <h4>The port is busy or Connect fails</h4>
+      <p>Only one program can open a serial port. Close the Arduino Serial Monitor or Plotter, and anything else using the board. On Linux, your user also needs access to the port, usually through the <code>dialout</code> group (<code>uucp</code> on Arch).</p>
+      <h4>Pins show up, but the board name says “No board”</h4>
+      <p>The app missed the <code>hello</code> message, which the library sends once from <code>begin()</code>. Most Arduinos reset when the port opens, so they send it again; boards that don't reset (many ESP32 and native-USB boards) need a press of the <b>reset</b> button after connecting.</p>
+      <h4>Nothing arrives at all</h4>
+      <p>Make sure <code>WatchBoard.update()</code> runs on every pass of <code>loop()</code> and isn't held up by long <code>delay()</code> calls, and that the sketch doesn't call <code>Serial.begin()</code> at a different baud rate after <code>WatchBoard.begin()</code>. The Serial tab shows exactly what the board is sending.</p>
+      <h4>An output pin has no switch</h4>
+      <p>The library reads each pin's direction from the chip on AVR (Uno, Mega, Nano…), SAMD, ESP32 and ESP8266 boards. Check that the sketch calls <code>pinMode(pin, OUTPUT)</code> and that the pin is registered with <code>watchDigital()</code>; the switch only drives pins that are both. On other boards every pin is reported as an input.</p>
+      <h4>A variable is missing</h4>
+      <p>The library holds up to 16 watched values; further names are ignored. Each name must stay valid for the life of the program, so use string literals such as <code>"voltage"</code>, not a temporary buffer.</p>
+      <p class="muted" style="margin-top:2.5rem">Something else? <a href="https://github.com/ajunior/watchboard/issues/new">Open an issue</a>.</p>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 Adjamilton Junior · Released under the <a href="https://github.com/ajunior/watchboard/blob/main/LICENSE">GPL-3.0</a></span>
+    <span>Built with <a href="https://www.qt.io/">Qt</a> and <a href="https://ajunior.github.io/mahina/">Mahina</a></span>
+  </div>
+</footer>
+
+<script>
+(() => {
+  const root = document.documentElement;
+  const mq = matchMedia("(prefers-color-scheme: dark)");
+  let saved = null;
+  try { saved = localStorage.getItem("wb-theme"); } catch (e) {}
+  const isDark = () => root.dataset.theme ? root.dataset.theme === "dark" : mq.matches;
+
+  // Screenshots follow the page theme, including a manual override of the OS one.
+  function syncShots() {
+    const d = isDark();
+    document.querySelectorAll("source[data-dark]").forEach(s => {
+      s.media = d ? "all" : "not all";
+    });
+  }
+  if (saved === "light" || saved === "dark") root.dataset.theme = saved;
+  syncShots();
+  mq.addEventListener("change", syncShots);
+  document.getElementById("theme").addEventListener("click", () => {
+    root.dataset.theme = isDark() ? "light" : "dark";
+    try { localStorage.setItem("wb-theme", root.dataset.theme); } catch (e) {}
+    syncShots();
+  });
+
+  // App tour: swap the screenshot.
+  const shot = document.querySelector("#tour-shot");
+  const names = { tab1: "Home", tab2: "Pins", tab3: "Variables", tab4: "Serial" };
+  document.querySelectorAll(".tour-tab").forEach(btn => btn.addEventListener("click", () => {
+    document.querySelectorAll(".tour-tab").forEach(b => b.setAttribute("aria-selected", b === btn));
+    const k = btn.dataset.shot;
+    shot.querySelector("source").srcset = `img/${k}-dark.webp`;
+    const img = shot.querySelector("img");
+    img.src = `img/${k}-light.webp`;
+    img.alt = `WatchBoard's ${names[k]} tab`;
+  }));
+  // Preload the other tour shots so switching doesn't flash.
+  addEventListener("load", () => Object.keys(names).forEach(k => {
+    new Image().src = `img/${k}-${isDark() ? "dark" : "light"}.webp`;
+  }));
+
+  // Copy buttons on code blocks.
+  document.querySelectorAll("pre").forEach(pre => {
+    const b = document.createElement("button");
+    b.className = "copy"; b.type = "button"; b.textContent = "Copy";
+    b.addEventListener("click", async () => {
+      try { await navigator.clipboard.writeText(pre.querySelector("code").innerText); b.textContent = "Copied"; }
+      catch (e) { b.textContent = "Failed"; }
+      setTimeout(() => b.textContent = "Copy", 1400);
+    });
+    pre.appendChild(b);
+  });
+
+  // Highlight the docs section in view.
+  const links = [...document.querySelectorAll(".toc a")];
+  const targets = links.map(a => document.querySelector(a.getAttribute("href")));
+  const spy = () => {
+    let i = 0;
+    targets.forEach((t, j) => { if (t.getBoundingClientRect().top < 120) i = j; });
+    links.forEach((a, j) => a.classList.toggle("on", j === i));
+  };
+  addEventListener("scroll", spy, { passive: true }); spy();
+})();
+</script>
+</body>
+</html>
