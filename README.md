@@ -19,7 +19,7 @@ WatchBoard is a desktop dashboard for Arduino, ESP32 and friends. Add a small li
 
 The Serial Monitor shows you raw text; dashboard tools want a server, flows and a browser tab. WatchBoard is a native app that opens in a second and shows the board as it is right now.
 
-- **Live, not logged.** The board sends a full snapshot ten times a second. Pins, values and plots update as it happens.
+- **Debug by looking, not by printing.** Instead of sprinkling `Serial.print` and reading a wall of text, watch pins and values change as the code runs, ten snapshots a second.
 - **Five lines of firmware.** Register pins, name the values you care about, call `update()` in `loop()`. Non-blocking, no dependencies.
 - **Talk back to the board.** Flip an output pin with a switch, or type a line and send it, with history, from the Serial tab.
 
