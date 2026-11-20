@@ -25,6 +25,10 @@ compile_commands.json
 *.swp
 *~
 
+# Packaging output (packaging/*/ scripts)
+dist/
+AppDir/
+
 # Arduino CLI / PlatformIO builds of the firmware
 firmware/**/build/
 .pio/

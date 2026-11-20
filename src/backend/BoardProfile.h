@@ -3,6 +3,7 @@
 #include <QMap>
 #include <QObject>
 #include <QString>
+#include <QVariant>
 
 class BoardProfile : public QObject {
     Q_OBJECT
