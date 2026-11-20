@@ -262,7 +262,7 @@ footer .wrap { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: space
       <h3 id="quick-start">Quick start</h3>
       <ol class="steps">
         <li><b>Install the app.</b> Grab the build for your system from the <a href="https://github.com/ajunior/watchboard/releases/latest">releases page</a>, or <a href="#build">build it from source</a>.</li>
-        <li><b>Add the library to your sketch.</b> Copy the <code>firmware/WatchBoard</code> folder from the repository into your Arduino <code>libraries</code> folder, then:
+        <li><b>Add the library to your sketch.</b> Download <code>WatchBoard-library-<var>version</var>.zip</code> from the same release and add it with <b>Sketch → Include Library → Add .ZIP Library…</b> (<a href="#library">other ways</a>), then:
 <pre><code><span class="tok-k">#include</span> <span class="tok-s">&lt;WatchBoard.h&gt;</span>
 
 <span class="tok-k">void</span> setup() {
@@ -282,7 +282,13 @@ footer .wrap { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: space
 
       <!-- Install -->
       <h3 id="install">Install the app</h3>
-      <p>Ready-made builds are published on the <a href="https://github.com/ajunior/watchboard/releases/latest">releases page</a>. If there isn't one for your system, building it takes a couple of commands.</p>
+      <p>Ready-made builds are published on the <a href="https://github.com/ajunior/watchboard/releases/latest">releases page</a>, next to a <code>SHA256SUMS.txt</code> to check them against:</p>
+      <ul>
+        <li><b>Linux</b>: <code>watchboard-<var>version</var>-x86_64.AppImage</code>. Make it executable (<code>chmod +x</code>) and run it; nothing to install. To reach the board, your user needs to be in the <code>dialout</code> group (<code>uucp</code> on Arch).</li>
+        <li><b>macOS</b> 13 or later: <code>WatchBoard-<var>version</var>-macos.dmg</code>. Drag WatchBoard to Applications. The app is not notarized yet, so the first time macOS refuses to open it: go to <b>System Settings → Privacy &amp; Security</b> and click <b>Open Anyway</b>.</li>
+        <li><b>Windows</b> 10 or 11, 64-bit: <code>WatchBoard-<var>version</var>-setup.exe</code>. It installs for your user only, without admin rights. If SmartScreen stops it, click <b>More info → Run anyway</b>.</li>
+      </ul>
+      <p>If there isn't one for your system, building it takes a couple of commands.</p>
       <h4 id="build">Build from source</h4>
       <p>You need <b>Qt 6.8 or newer</b> (with the Qt Quick, Quick Controls 2 and Serial Port modules), <b>CMake 3.16+</b> and a <b>C++17</b> compiler. The UI library, <a href="https://ajunior.github.io/mahina/">Mahina</a>, is downloaded by CMake while configuring, so the first configure needs an internet connection.</p>
 <pre><code>git clone https://github.com/ajunior/watchboard.git
@@ -293,7 +299,8 @@ cmake --build build
 
       <!-- Library -->
       <h3 id="library">The Arduino library</h3>
-      <p>The library lives in <code>firmware/WatchBoard</code>. Install it by copying that folder into your Arduino <code>libraries</code> folder (<code>~/Arduino/libraries</code> on Linux and macOS, <code>Documents\Arduino\libraries</code> on Windows), or zip it and use <b>Sketch → Include Library → Add .ZIP Library…</b>. It ships with an example, <b>File → Examples → WatchBoard → BasicMonitor</b>.</p>
+      <p>Each release carries the library as <code>WatchBoard-library-<var>version</var>.zip</code>. In the Arduino IDE, use <b>Sketch → Include Library → Add .ZIP Library…</b> and pick that file; with arduino-cli, <code>arduino-cli lib install --zip-path WatchBoard-library-<var>version</var>.zip</code>. From a clone of the repository you can instead copy <code>firmware/WatchBoard</code> into your Arduino <code>libraries</code> folder (<code>~/Arduino/libraries</code> on Linux and macOS, <code>Documents\Arduino\libraries</code> on Windows). It ships with an example, <b>File → Examples → WatchBoard → BasicMonitor</b>.</p>
+      <p>Use the library from the same release as the app: they speak one protocol and share one version number.</p>
 
       <h4>API</h4>
       <div class="table-wrap"><table>

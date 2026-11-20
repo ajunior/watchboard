@@ -34,8 +34,8 @@ Light and dark theme, switched with <kbd>Ctrl</kbd>+<kbd>D</kbd>.
 
 ## Quick start
 
-1. **Install the app.** Grab the build for your system from the [releases page](https://github.com/ajunior/watchboard/releases/latest), or [build it from source](#building-from-source).
-2. **Add the library to your sketch.** Copy the `firmware/WatchBoard` folder into your Arduino `libraries` folder (or zip it and use *Sketch → Include Library → Add .ZIP Library…*), then:
+1. **Install the app.** Grab the build for your system from the [releases page](https://github.com/ajunior/watchboard/releases/latest): the `.AppImage` for Linux, the `.dmg` for macOS 13+, the `-setup.exe` for Windows. Or [build it from source](#building-from-source).
+2. **Add the library to your sketch.** Download `WatchBoard-library-<version>.zip` from the same release and add it with *Sketch → Include Library → Add .ZIP Library…* (or copy `firmware/WatchBoard` into your Arduino `libraries` folder), then:
 
    ```cpp
    #include <WatchBoard.h>

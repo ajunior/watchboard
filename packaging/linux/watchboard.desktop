@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=WatchBoard
+Comment=See what your microcontroller is doing, in real time
+Exec=watchboard
+Icon=watchboard
+Type=Application
+Categories=Development;Electronics;
+StartupWMClass=watchboard
