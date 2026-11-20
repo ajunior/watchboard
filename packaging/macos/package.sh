@@ -37,6 +37,13 @@ macdeployqt "$APP" \
     -no-strip
 rm -rf "$APP/Contents/Resources/qml/Mahina"
 
+# QtSql arrives as a dependency of a QML module, and macdeployqt brings every
+# SQL driver plugin with it. WatchBoard opens no database, and several of those
+# plugins still name client libraries on Qt's build machine (Postgres.app,
+# libiodbc, Mimer), which only produces otool errors here and dangling
+# references in a signed bundle.
+rm -rf "$APP/Contents/PlugIns/sqldrivers"
+
 # ── Start what was just bundled ───────────────────────────────────────────────
 # The bundled binary, not the build tree's, so a QML module macdeployqt missed
 # shows up here ("module ... is not installed") and not on a user's Mac. It
