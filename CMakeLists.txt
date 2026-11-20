@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(WatchBoard VERSION 0.45.11 LANGUAGES CXX)
+project(WatchBoard VERSION 0.44.11 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

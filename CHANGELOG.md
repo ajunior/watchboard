@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.45.11
+## 0.44.11
 
 First public release.
 
@@ -12,7 +12,7 @@ First public release.
 
 ### Arduino library
 
-- Released as `WatchBoard-library-0.45.11.zip`, ready for *Add .ZIP Library…*. Supports AVR, SAMD, ESP32 and ESP8266.
+- Released as `WatchBoard-library-0.44.11.zip`, ready for *Add .ZIP Library…*. Supports AVR, SAMD, ESP32 and ESP8266.
 - Output pins are reported as `OUTPUT` on every supported architecture, so the app shows a switch for them.
 - On ESP32, analog pins are labelled with the board's A name (GPIO36 is `A0`).
 - `watch()` values are sent with two decimal places and correct rounding, including negative values; NaN and infinity are sent as `null`.
