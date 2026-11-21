@@ -82,7 +82,7 @@ Dialog {
                     model: [
                         ["Qt",      AppInfo.qtVersion],
                         ["Mahina",  AppInfo.mahinaVersion],
-                        ["License", "GPL-3.0"]
+                        ["License", "GPL-3.0-or-later"]
                     ]
                     delegate: Item {
                         id: row

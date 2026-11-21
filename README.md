@@ -4,7 +4,7 @@
 
 WatchBoard is a desktop dashboard for Arduino, ESP32 and friends. Add a small library to your sketch, plug the board in over USB, and watch its pins, variables and serial traffic live, without a single `Serial.print`.
 
-![License: GPL v3](https://img.shields.io/badge/license-GPL%20v3-blue)
+![License: GPL v3 or later](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/img/tab2-dark.webp">
@@ -89,4 +89,4 @@ Every field and its default is described in the [protocol reference](https://aju
 
 ## License
 
-GPL-3.0. See [LICENSE](LICENSE).
+WatchBoard is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. See [LICENSE](LICENSE) for the full text.
